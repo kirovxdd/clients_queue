@@ -23,7 +23,7 @@ class GetClientPositionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', new IdIsValid],
+            'id' => ['required', 'integer', new IdIsValid],
         ];
     }
 }

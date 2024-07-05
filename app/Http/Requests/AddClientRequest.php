@@ -23,9 +23,9 @@ class AddClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id'      => ['required_without_all:name, surname', new IdIsValid],
-            'name'    => ['required_without:id'],
-            'surname' => ['required_with:name'],
+            'id'      => ['required_without_all:name, surname', 'integer', new IdIsValid],
+            'name'    => ['required_without:id', 'string'],
+            'surname' => ['required_with:name', 'string'],
         ];
     }
 }

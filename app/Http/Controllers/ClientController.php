@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Events\ClientTransferred;
 use App\Events\RequestToDeleteClientFromQueue;
 use App\Events\RequestToProcessClientQueue;
+use App\Http\Api\Entities\Client as ClientEntity;
+use App\Http\Api\Entities\QueuePosition;
 use App\Http\Requests\DestroyClientRequest;
 use App\Http\Requests\GetClientPositionRequest;
 use Illuminate\Http\JsonResponse;
@@ -54,12 +56,14 @@ class ClientController extends Controller
     public function getClientList(): JsonResponse
     {
         try {
-            $allClients = $this->clientService->getAllClients();
+            $clientEntities = $this->clientService->getAllClients();
+            $positionEntities = $this->queueService->getFullQueue();
+            $this->matchClientsWithPositions($clientEntities, $positionEntities);
         } catch (\Throwable $t) {
             return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
         }
 
-        return response()->json($allClients);
+        return response()->json($clientEntities);
     }
 
     public function getClientPosition(GetClientPositionRequest $request): JsonResponse
@@ -99,6 +103,23 @@ class ClientController extends Controller
         RequestToProcessClientQueue::dispatch();
 
         return response()->json();
+    }
+
+    /**
+     * @param ClientEntity[] $clientEntities
+     * @param QueuePosition[] $positionEntities
+     */
+    private function matchClientsWithPositions(array $clientEntities, array $positionEntities): void
+    {
+        foreach ($clientEntities as $clientEntity) {
+            $positionEntity = $positionEntities[$clientEntity->id] ?? null;
+
+            if ($positionEntity === null) {
+               continue;
+            }
+
+            $clientEntity->positionInQueue = $positionEntity->clientPosition;
+        }
     }
 
     private function isNeedToCreateNewClient(array $clientData): bool

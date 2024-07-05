@@ -14,4 +14,6 @@ abstract class AbstractQueueService
     abstract public function getClientPosition(int $clientId): ?int;
 
     abstract public function getCurrentClientId(): ?int;
+
+    abstract public function getFullQueue(): array;
 }

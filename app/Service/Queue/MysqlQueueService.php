@@ -2,6 +2,7 @@
 
 namespace App\Service\Queue;
 
+use App\Http\Api\Entities\QueuePosition;
 use App\Models\Queue;
 
 class MysqlQueueService extends AbstractQueueService
@@ -33,8 +34,42 @@ class MysqlQueueService extends AbstractQueueService
 
     public function getCurrentClientId(): ?int
     {
-        $clientQueue = Queue::query()->orderBy(Queue::FIELD_CREATED_AT)->first();
+        $queuePosition = Queue::query()->orderBy(Queue::FIELD_CREATED_AT)->first();
 
-        return $clientQueue instanceof Queue ? $clientQueue->client_id : null;
+        return $queuePosition instanceof Queue ? $queuePosition->client_id : null;
+    }
+
+    /**
+     * @return QueuePosition[]
+     */
+    public function getFullQueue(): array
+    {
+       $fullQueue = Queue::query()->orderBy(Queue::FIELD_ID)->get()->all();
+
+      return $this->convertFullQueueToQueuePositionEntities($fullQueue);
+    }
+
+    /**
+     * @param Queue[] $fullQueueSortedById
+     * @return QueuePosition[]
+     */
+    private function convertFullQueueToQueuePositionEntities(array $fullQueueSortedById): array
+    {
+        $positionEntities = [];
+
+        $clientPosition = 1;
+        foreach ($fullQueueSortedById as $queuePositionModel) {
+            $clientId = $queuePositionModel->client_id;
+
+            $queuePosition = new QueuePosition();
+            $queuePosition->clientId       = $clientId;
+            $queuePosition->clientPosition = $clientPosition;
+
+            $positionEntities[$clientId] = $queuePosition;
+
+            $clientPosition++;
+        }
+
+        return $positionEntities;
     }
 }
