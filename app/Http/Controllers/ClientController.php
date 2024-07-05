@@ -14,24 +14,32 @@ class ClientController extends Controller
 {
     public function addClient(AddClientRequest $request): JsonResponse
     {
-        $clientData = $request->validated();
+        try {
+            $clientData = $request->validated();
 
-        if ($this->isNeedToCreateNewClient($clientData)) {
-            $clientId = $this->clientService->createClient($clientData);
-        } else {
-            $clientId = $clientData['id'];
+            if ($this->isNeedToCreateNewClient($clientData)) {
+                $clientId = $this->clientService->createClient($clientData);
+            } else {
+                $clientId = $clientData['id'];
+            }
+
+            ClientTransferred::dispatch($clientId);
+        } catch (\Throwable $t) {
+            return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
         }
-
-        ClientTransferred::dispatch($clientId);
 
         return response()->json(status: HTTP_CODE_CREATED);
     }
 
     public function destroyClient(DestroyClientRequest $request): JsonResponse
     {
-        $this->clientService->deleteClientById($request->validated()['id']);
+        try {
+            $this->clientService->deleteClientById($request->validated()['id']);
 
-        $this->deleteClientFromQueue($request);
+            $this->deleteClientFromQueue($request);
+        } catch (\Throwable $t) {
+            return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
+        }
 
         return response()->json();
     }
@@ -45,29 +53,43 @@ class ClientController extends Controller
 
     public function getClientList(): JsonResponse
     {
-        return response()->json($this->clientService->getAllClients());
+        try {
+            $allClients = $this->clientService->getAllClients();
+        } catch (\Throwable $t) {
+            return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
+        }
+
+        return response()->json($allClients);
     }
 
     public function getClientPosition(GetClientPositionRequest $request): JsonResponse
     {
-        $clientId = $request->validated()['id'];
+        try {
+            $clientId = $request->validated()['id'];
 
-        $apiClient = $this->clientService->getClientById($clientId);
+            $apiClient = $this->clientService->getClientById($clientId);
 
-        $positionInQueue = $this->queueService->getClientPosition($clientId);
-        if ($positionInQueue === null) {
-            return response()->json('this client isn`t in the queue');
+            $positionInQueue = $this->queueService->getClientPosition($clientId);
+            if ($positionInQueue === null) {
+                return response()->json('this client isn`t in the queue');
+            }
+            $apiClient->positionInQueue = $positionInQueue;
+        }  catch (\Throwable $t) {
+            return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
         }
-        $apiClient->positionInQueue = $positionInQueue;
 
         return response()->json($apiClient);
     }
 
     public function getCurrentClient(): JsonResponse
     {
-        $currentClientId = $this->queueService->getCurrentClientId();
+        try {
+            $currentClientId = $this->queueService->getCurrentClientId();
 
-        $apiClient = $this->clientService->getClientById($currentClientId);
+            $apiClient = $this->clientService->getClientById($currentClientId);
+        } catch (\Throwable $t) {
+            return response()->json(status: HTTP_CODE_INTERNAL_SERVER_ERROR);
+        }
 
         return response()->json($apiClient);
     }
