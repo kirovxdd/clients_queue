@@ -32,23 +32,23 @@ php artisan key:generate
 
 1. POST /api/client - Create a client and add to the queue OR add existing client to the queue
 ####
-Parameters:
+    Parameters:
 + id (required) - Existing client ID
 
    OR
 + name and surname (required) - New client data
 2. DELETE /api/client - Delete the client by id from the db and the queue
 ####
-   Parameters:
+    Parameters:
 + id (required) - Existing client ID
 3. DELETE api/client/queue - Delete the client by id from the queue
 ####
-Parameters:
+    Parameters:
 + id (required) - Existing client ID
 4. GET api/clients - Get a list of all clients
 5. GET api/client/queue - Get the client's data along with his position in the queue
 ####
-Parameters:
+    Parameters:
 + id (required) - Existing client ID
 6. GET api/client/queue/current - Get the data of the first client in the queue
 7. GET api/client/queue/process - Advance the queue after work with current client is completed
